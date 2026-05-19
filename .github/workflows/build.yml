@@ -102,8 +102,8 @@ jobs:
 
       - name: List build output
         run: |
-          ls -la desktop/release/ 2>/dev/null || echo "Release目录不存在"
-          ls -la desktop/dist/ 2>/dev/null || echo "Dist目录不存在"
+          if (Test-Path desktop/release) { Get-ChildItem desktop/release -Recurse } else { Write-Host "Release目录不存在" }
+          if (Test-Path desktop/dist) { Get-ChildItem desktop/dist -Recurse } else { Write-Host "Dist目录不存在" }
 
       - name: Upload desktop installer
         if: always()
