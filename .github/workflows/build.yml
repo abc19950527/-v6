@@ -33,33 +33,24 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3-dev build-essential git zip unzip
-          sudo apt install -y openjdk-11-jdk
+          sudo apt install -y python3-dev build-essential git zip unzip openjdk-17-jdk
           java -version
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: 33
-          build-tools: 33.0.2
-
-      - name: Accept licenses
+      - name: Accept Android SDK licenses
         run: |
           mkdir -p ~/.android
           touch ~/.android/repositories.cfg
-          yes | sdkmanager --licenses 2>/dev/null || true
-
-      - name: Install NDK
-        run: |
-          sdkmanager "ndk;25b" 2>/dev/null || echo "NDK安装跳过"
+          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > ~/.android/repositories.cfg
+          yes | sdkmanager --licenses || true
+          yes | sdkmanager --update || true
 
       - name: Build debug APK
         run: |
           cd android
-          buildozer android debug --verbose
+          buildozer android debug
         env:
-          ANDROID_HOME: ${{ env.ANDROID_HOME }}
-          ANDROIDSDKROOT: ${{ env.ANDROID_HOME }}
+          ANDROID_HOME: /opt/android-sdk
+          ANDROIDSDKROOT: /opt/android-sdk
           BUILD_NUMBER: ${{ github.run_number }}
 
       - name: List APK output

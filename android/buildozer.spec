@@ -25,14 +25,11 @@ android.permissions = BLUETOOTH,BLUETOOTH_ADMIN,BLUETOOTH_CONNECT,BLUETOOTH_SCAN
 orientation = portrait
 fullscreen = 0
 
-# Icon
-icon.filename = icon.png
-
 # Window settings
 android.window_soft_input_mode = adjust_resize
 
 # Build settings
-build_mode = release
+build_mode = debug
 android.release_artifact = apk
 
 [buildozer]
@@ -50,9 +47,9 @@ build_dir = ./.buildozer
 requirements = hostpython3,kivy,sqlite3,android,pyjnius,pygments,requests
 
 # Android API level
-android.api = 27
+android.api = 33
 
-# Android NDK
+# Android NDK (let buildozer download)
 android.ndk = 25b
 
 # NDK API
@@ -60,3 +57,6 @@ android.ndk_api = 21
 
 # Private storage
 android.private_storage = 1
+
+# Disable SDK update check
+android.check_boot_completed = 0
