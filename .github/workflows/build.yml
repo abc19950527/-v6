@@ -64,7 +64,6 @@ jobs:
         env:
           ANDROID_HOME: /opt/android-sdk
           ANDROIDSDKROOT: /opt/android-sdk
-          ANDROIDNDKROOT: /opt/android-sdk/ndk/25.2.9519653
           BUILD_NUMBER: ${{ github.run_number }}
 
       - name: List APK output
