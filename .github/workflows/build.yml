@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build All Platforms
 
 on:
   push:
@@ -8,6 +8,9 @@ on:
   workflow_dispatch:
 
 jobs:
+  # ============================================
+  # Android APK 构建
+  # ============================================
   build-android:
     runs-on: ubuntu-latest
     
@@ -20,7 +23,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           pip install --upgrade pip
           pip install buildozer==1.5.0
@@ -29,36 +32,50 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3-dev build-essential git zip unzip openjdk-11-jdk
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
-          unzip -q cmdline-tools.zip
-          mkdir -p ~/android-sdk/cmdline-tools
-          mv cmdline-tools ~/android-sdk/cmdline-tools/latest
-          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "PATH=$PATH:$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools" >> $GITHUB_ENV
+          sudo apt install -y python3-dev build-essential git zip unzip
+          sudo apt install -y openjdk-11-jdk
+          java -version
 
-      - name: Accept licenses and install SDK components
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 33
+          build-tools: 33.0.2
+
+      - name: Accept licenses
         run: |
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
+          mkdir -p ~/.android
+          touch ~/.android/repositories.cfg
           yes | sdkmanager --licenses 2>/dev/null || true
-          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;25b"
+
+      - name: Install NDK
+        run: |
+          sdkmanager "ndk;25b" 2>/dev/null || echo "NDK安装跳过"
 
       - name: Build debug APK
         run: |
           cd android
-          buildozer android debug
+          buildozer android debug --verbose
         env:
-          ANDROID_HOME: $HOME/android-sdk
-          ANDROIDSDKROOT: $HOME/android-sdk
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+          ANDROIDSDKROOT: ${{ env.ANDROID_HOME }}
+          BUILD_NUMBER: ${{ github.run_number }}
+
+      - name: List APK output
+        run: |
+          ls -la android/bin/ 2>/dev/null || echo "APK目录不存在"
 
       - name: Upload debug APK
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: android-debug-apk
           path: android/bin/*.apk
           retention-days: 30
 
+  # ============================================
+  # Windows EXE 构建
+  # ============================================
   build-desktop:
     runs-on: windows-latest
     
@@ -70,22 +87,31 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Cache npm packages
-        uses: actions/cache@v3
-        with:
-          path: desktop/node_modules
-          key: ${{ runner.os }}-npm-${{ hashFiles('desktop/package-lock.json') }}
+          cache: 'npm'
+          cache-dependency-path: desktop/package-lock.json
 
       - name: Install dependencies
-        run: cd desktop && npm ci
+        run: |
+          cd desktop
+          npm ci
 
-      - name: Build desktop app
-        run: cd desktop && npm run build
+      - name: Build Electron app
+        run: |
+          cd desktop
+          npm run build
+        shell: bash
+
+      - name: List build output
+        run: |
+          ls -la desktop/release/ 2>/dev/null || echo "Release目录不存在"
+          ls -la desktop/dist/ 2>/dev/null || echo "Dist目录不存在"
 
       - name: Upload desktop installer
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: desktop-windows-installer
-          path: desktop/release/*.exe
+          name: desktop-windows-app
+          path: |
+            desktop/release/*.exe
+            desktop/dist/**/*
           retention-days: 30
