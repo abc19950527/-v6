@@ -52,14 +52,11 @@
           "target": "nsis",
           "arch": ["x64"]
         }
-      ],
-      "icon": "public/icon.ico"
+      ]
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "installerIcon": "public/icon.ico",
-      "uninstallerIcon": "public/icon.ico"
+      "allowToChangeInstallationDirectory": true
     }
   }
 }
