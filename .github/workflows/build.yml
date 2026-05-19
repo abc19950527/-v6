@@ -36,13 +36,15 @@ jobs:
           sudo apt install -y python3-dev build-essential git zip unzip openjdk-17-jdk
           java -version
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 33
+          build-tools: 34.0.0
+          
       - name: Accept Android SDK licenses
         run: |
-          mkdir -p ~/.android
-          touch ~/.android/repositories.cfg
-          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > ~/.android/repositories.cfg
-          yes | sdkmanager --licenses || true
-          yes | sdkmanager --update || true
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Build debug APK
         run: |
@@ -51,6 +53,7 @@ jobs:
         env:
           ANDROID_HOME: /opt/android-sdk
           ANDROIDSDKROOT: /opt/android-sdk
+          ANDROIDNDKROOT: /opt/android-sdk/ndk/25.2.9519653
           BUILD_NUMBER: ${{ github.run_number }}
 
       - name: List APK output
