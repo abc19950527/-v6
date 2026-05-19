@@ -48,7 +48,13 @@ jobs:
           touch ~/.android/repositories.cfg
           # 接受系统SDK许可证
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
-          # 预创建buildozer SDK许可证文件
+
+      - name: Prepare buildozer SDK directory
+        run: |
+          # 创建buildozer SDK目录并复制完整SDK（包含sdkmanager）
+          mkdir -p ~/.buildozer/android/platform
+          cp -r $ANDROID_HOME ~/.buildozer/android/platform/android-sdk
+          # 复制许可证
           mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
           echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
           echo "84831b9409646a918e30573bab4c9c91346d8abd" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
@@ -56,6 +62,8 @@ jobs:
           echo "e6b7c2ab7fa2298c15165e9583d0acf0b04a2232" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
           echo "33b6a2b64607f11b759f320ef9dff4ae5c47d97a" > ~/.buildozer/android/platform/android-sdk/licenses/google-gdk-license
           touch ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
+          echo "SDK准备完成"
+          ls -la ~/.buildozer/android/platform/android-sdk/
 
       - name: Build debug APK
         run: |
