@@ -94,7 +94,8 @@ jobs:
       - name: Install dependencies
         run: |
           cd desktop
-          npm ci
+          npm config set legacy-peer-deps true
+          npm ci --ignore-scripts
 
       - name: Build Electron app
         run: |
