@@ -1,0 +1,91 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install buildozer==1.5.0
+          pip install kivy==2.3.0
+
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y python3-dev build-essential git zip unzip openjdk-11-jdk
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+          unzip -q cmdline-tools.zip
+          mkdir -p ~/android-sdk/cmdline-tools
+          mv cmdline-tools ~/android-sdk/cmdline-tools/latest
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "PATH=$PATH:$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools" >> $GITHUB_ENV
+
+      - name: Accept licenses and install SDK components
+        run: |
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
+          yes | sdkmanager --licenses 2>/dev/null || true
+          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;25b"
+
+      - name: Build debug APK
+        run: |
+          cd android
+          buildozer android debug
+        env:
+          ANDROID_HOME: $HOME/android-sdk
+          ANDROIDSDKROOT: $HOME/android-sdk
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk
+          path: android/bin/*.apk
+          retention-days: 30
+
+  build-desktop:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache npm packages
+        uses: actions/cache@v3
+        with:
+          path: desktop/node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('desktop/package-lock.json') }}
+
+      - name: Install dependencies
+        run: cd desktop && npm ci
+
+      - name: Build desktop app
+        run: cd desktop && npm run build
+
+      - name: Upload desktop installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-windows-installer
+          path: desktop/release/*.exe
+          retention-days: 30

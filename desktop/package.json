@@ -1,0 +1,64 @@
+{
+  "name": "pharmacy-management-desktop",
+  "version": "6.0.0",
+  "description": "药品进销存管理系统v6 桌面端",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && electron-builder",
+    "build:vite": "vite build",
+    "preview": "vite preview",
+    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:build": "vite build && electron-builder --win --publish never"
+  },
+  "dependencies": {
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0",
+    "pinia": "^2.1.7",
+    "element-plus": "^2.6.1",
+    "@element-plus/icons-vue": "^2.3.1",
+    "sql.js": "^1.10.2",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "xlsx": "^0.18.5",
+    "electron-log": "^5.1.1",
+    "echarts": "^5.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "vite": "^5.1.6",
+    "electron": "^29.1.0",
+    "electron-builder": "^24.13.3",
+    "vite-plugin-electron": "^0.28.4",
+    "vite-plugin-electron-renderer": "^0.14.5",
+    "concurrently": "^8.2.2",
+    "wait-on": "^7.2.0",
+    "sass": "^1.72.0"
+  },
+  "build": {
+    "appId": "com.pharmacy.management",
+    "productName": "药品进销存管理系统v6",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "public/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "public/icon.ico",
+      "uninstallerIcon": "public/icon.ico"
+    }
+  }
+}

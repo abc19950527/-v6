@@ -1,0 +1,350 @@
+// 药品进销存管理系统v6 - 全局样式
+
+// 主题色
+$primary-color: #1890ff;
+$primary-light: #40a9ff;
+$primary-dark: #096dd9;
+
+$success-color: #52c41a;
+$warning-color: #faad14;
+$danger-color: #ff4d4f;
+$info-color: #909399;
+
+$bg-color: #f0f2f5;
+$white: #ffffff;
+$text-primary: #303133;
+$text-regular: #606266;
+$text-secondary: #909399;
+
+// 医疗蓝主题变量
+:root {
+  --primary-color: #{$primary-color};
+  --primary-light: #{$primary-light};
+  --primary-dark: #{$primary-dark};
+  --success-color: #{$success-color};
+  --warning-color: #{$warning-color};
+  --danger-color: #{$danger-color};
+  --info-color: #{$info-color};
+  --bg-color: #{$bg-color};
+  --text-primary: #{$text-primary};
+  --text-regular: #{$text-regular};
+  --text-secondary: #{$text-secondary};
+}
+
+// 全局重置
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Microsoft YaHei', 'PingFang SC', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  color: var(--text-primary);
+  background-color: var(--bg-color);
+}
+
+#app {
+  height: 100%;
+}
+
+// 布局容器
+.page-container {
+  padding: 20px;
+  background-color: var(--bg-color);
+  min-height: calc(100vh - 120px);
+}
+
+// 搜索表单
+.search-form {
+  background: $white;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  
+  .el-form-item {
+    margin-bottom: 0;
+  }
+}
+
+// 数据表格
+.data-table {
+  background: $white;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  
+  .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+  }
+}
+
+// 大按钮样式
+.btn-large {
+  padding: 12px 32px !important;
+  font-size: 16px !important;
+}
+
+// 主要操作按钮
+.primary-btn {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  
+  &:hover {
+    background-color: var(--primary-light) !important;
+    border-color: var(--primary-light) !important;
+  }
+}
+
+// 卡片组件
+.info-card {
+  background: $white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  
+  .card-title {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+  
+  .card-value {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--primary-color);
+  }
+}
+
+// 统计卡片
+.stat-card {
+  .stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    
+    &.blue { background: rgba(24, 144, 255, 0.1); color: #1890ff; }
+    &.green { background: rgba(82, 196, 26, 0.1); color: #52c41a; }
+    &.orange { background: rgba(250, 173, 20, 0.1); color: #faad14; }
+    &.red { background: rgba(255, 77, 79, 0.1); color: #ff4d4f; }
+  }
+}
+
+// 表单弹窗
+.form-dialog {
+  .el-dialog__body {
+    padding: 20px 30px;
+  }
+  
+  .form-footer {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 24px;
+  }
+}
+
+// 左侧导航
+.sidebar-menu {
+  border-right: none !important;
+  background: transparent !important;
+  
+  .el-menu-item {
+    height: 56px;
+    line-height: 56px;
+    font-size: 15px;
+    margin: 4px 8px;
+    border-radius: 8px;
+    
+    &:hover, &.is-active {
+      background-color: rgba(24, 144, 255, 0.1) !important;
+      color: var(--primary-color) !important;
+      
+      i {
+        color: var(--primary-color) !important;
+      }
+    }
+    
+    i {
+      font-size: 20px;
+      margin-right: 12px;
+    }
+  }
+}
+
+// 登录页面
+.login-container {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  
+  .login-box {
+    width: 420px;
+    padding: 40px;
+    background: $white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    
+    .login-logo {
+      text-align: center;
+      margin-bottom: 30px;
+      
+      h1 {
+        font-size: 24px;
+        color: var(--primary-color);
+        margin-bottom: 8px;
+      }
+      
+      p {
+        color: var(--text-secondary);
+        font-size: 14px;
+      }
+    }
+  }
+}
+
+// 主内容区
+.main-content {
+  background: $white;
+  border-radius: 8px;
+  padding: 24px;
+  min-height: calc(100vh - 140px);
+}
+
+// 工具栏
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  
+  .toolbar-left {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  
+  .toolbar-right {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+}
+
+// 详情弹窗
+.detail-dialog {
+  .el-dialog__body {
+    padding: 20px 30px;
+  }
+  
+  .detail-row {
+    display: flex;
+    padding: 12px 0;
+    border-bottom: 1px solid #ebeef5;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    .detail-label {
+      width: 120px;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+    
+    .detail-value {
+      flex: 1;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+  }
+}
+
+// 分页
+.pagination-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+// 小票打印预览
+.ticket-preview {
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 20px;
+  width: 280px;
+  margin: 0 auto;
+  font-family: 'SimSun', monospace;
+  font-size: 12px;
+  
+  .ticket-header {
+    text-align: center;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed #999;
+  }
+  
+  .ticket-body {
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+  }
+  
+  .ticket-footer {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed #999;
+    text-align: center;
+  }
+}
+
+// 滚动条美化
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+  
+  &:hover {
+    background: #a8a8a8;
+  }
+}
+
+// 动画
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}

@@ -1,0 +1,20 @@
+# Python requirements for Android build
+# Generated for Buildozer
+
+# Core Kivy framework
+Kivy==2.1.0
+
+# Android specific
+android==0.1
+
+# Database
+# sqlite3 is included in Python standard library
+
+# HTTP requests for data sync
+requests==2.28.1
+
+# JSON handling
+# json is included in Python standard library
+
+# For data serialization
+pickle

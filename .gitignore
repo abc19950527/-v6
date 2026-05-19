@@ -1,0 +1,45 @@
+# 依赖
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# 构建输出
+desktop/dist/
+desktop/release/
+desktop/dist-electron/
+android/.buildozer/
+android/bin/
+android/build/
+
+# 日志
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 系统文件
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# 数据文件（保留结构）
+# *.db
+# *.sqlite
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 临时文件
+*.tmp
+*.temp
+.cache/
