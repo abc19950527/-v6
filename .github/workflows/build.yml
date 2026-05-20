@@ -78,6 +78,11 @@ jobs:
           export ANDROID_NDK_HOME=/usr/local/lib/android/sdk/ndk/25.2.5
           export PATH=$JAVA_HOME/bin:$PATH
           
+          # 接受所有 Android SDK licenses
+          mkdir -p ~/.android
+          echo -e "\n24333f8a63b6825ea9c5514f83c2829b004d1fee" > ~/.android/repositories.cfg
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
+          
           cd android
           buildozer android debug
         env:
