@@ -1,17 +1,13 @@
-name: Build All Platforms
+name: Build Android APK
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-  workflow_dispatch:
 
 jobs:
-  # ============================================
-  # Android APK 构建 - 使用 GitHub Actions 自带 SDK
-  # ============================================
-  build-android:
+  build:
     runs-on: ubuntu-latest
     
     steps:
@@ -25,50 +21,28 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          sudo apt update
-          sudo apt install -y python3-dev build-essential git zip unzip openjdk-17-jdk
-
-      - name: Set Java environment
-        run: |
-          sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
-          sudo update-alternatives --set javac /usr/lib/jvm/java-17-openjdk-amd64/bin/javac
-
-      - name: Check pre-installed Android SDK
-        run: |
-          echo "=== Pre-installed SDK at /usr/local/lib/android/sdk ==="
-          ls -la /usr/local/lib/android/sdk/
-          echo ""
-          echo "=== Build Tools ==="
-          ls /usr/local/lib/android/sdk/build-tools/ 2>/dev/null || echo "None"
-          echo ""
-          echo "=== Platforms ==="
-          ls /usr/local/lib/android/sdk/platforms/ 2>/dev/null || echo "None"
-          echo ""
-          echo "=== NDK ==="
-          ls /usr/local/lib/android/sdk/ndk/ 2>/dev/null || echo "None"
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-pip \
+            build-essential \
+            git \
+            zip \
+            unzip \
+            openjdk-17-jdk \
+            libffi-dev \
+            libssl-dev \
+            zlib1g-dev \
+            libncurses5-dev \
+            libncursesw5-dev \
+            libtinfo5 \
+            cmake \
+            libsqlite3-dev
 
       - name: Install Python dependencies
         run: |
-          pip install --upgrade pip wheel setuptools
-          pip install cython==0.29.36
-          pip install buildozer==1.5.0
-          pip install kivy==2.3.0
-
-      - name: Prepare Android licenses
-        run: |
-          mkdir -p ~/.android
-          touch ~/.android/repositories.cfg
-          mkdir -p ~/.buildozer
-
-      - name: Update buildozer.spec
-        run: |
-          cd android
-          # 使用 GitHub Actions 自带的 SDK
-          sed -i 's|android.sdk_path = .*|android.sdk_path = /usr/local/lib/android/sdk|' buildozer.spec
-          # 使用已有的 NDK
-          if grep -q "android.ndk_path" buildozer.spec; then
-            sed -i 's|android.ndk_path = .*|android.ndk_path = /usr/local/lib/android/sdk/ndk/25.2.5|' buildozer.spec
-          fi
+          pip install --upgrade pip
+          pip install Cython==0.29.33
+          pip install buildozer
 
       - name: Build debug APK
         run: |
@@ -76,79 +50,16 @@ jobs:
           export ANDROID_HOME=/usr/local/lib/android/sdk
           export ANDROIDSDKROOT=/usr/local/lib/android/sdk
           export ANDROID_NDK_HOME=/usr/local/lib/android/sdk/ndk/25.2.5
-          export PATH=$JAVA_HOME/bin:$PATH
+          export PATH=$JAVA_HOME/bin:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
           
           # 清理 buildozer 缓存
           rm -rf ~/.buildozer
+          rm -rf ~/.android
           
-          # 为 buildozer 创建符号链接到预装的 SDK
-          mkdir -p ~/.buildozer/android/platform
-          ln -sf $ANDROID_HOME ~/.buildozer/android/platform/android-sdk
-          
-          # 接受所有 Android SDK licenses（包括 buildozer 的 SDK）
+          # 接受 Android SDK licenses
           mkdir -p ~/.android
-          echo -e "\n24333f8a63b6825ea9c5514f83c2829b004d1fee" > ~/.android/repositories.cfg
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
-          yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
+          echo -e "24333f8a63b6825ea9c5514f83c2829b004d1fee\n8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb78af6dfcb131a6481e\n24333f8a63b6825ea9c5514f83c2829b004d1fee" > ~/.android/repositories.cfg
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
           
           cd android
           buildozer android debug
-        env:
-          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
-          ANDROID_HOME: /usr/local/lib/android/sdk
-          ANDROIDSDKROOT: /usr/local/lib/android/sdk
-          ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/25.2.5
-
-      - name: List APK output
-        run: |
-          ls -la android/bin/ 2>/dev/null || echo "APK目录不存在"
-          find android -name "*.apk" 2>/dev/null
-
-      - name: Upload debug APK
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-debug-apk
-          path: android/bin/*.apk
-          retention-days: 30
-
-  # ============================================
-  # Windows EXE 构建
-  # ============================================
-  build-desktop:
-    runs-on: windows-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install dependencies
-        run: |
-          cd desktop
-          npm install
-
-      - name: Build Electron app
-        run: |
-          cd desktop
-          npm run build
-        shell: bash
-
-      - name: List build output
-        run: |
-          if (Test-Path desktop/release) { Get-ChildItem desktop/release -Recurse } else { Write-Host "Release目录不存在" }
-          if (Test-Path desktop/dist) { Get-ChildItem desktop/dist -Recurse } else { Write-Host "Dist目录不存在" }
-
-      - name: Upload desktop installer
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: desktop-windows-app
-          path: |
-            desktop/release/*.exe
-            desktop/dist/**/*
-          retention-days: 30
