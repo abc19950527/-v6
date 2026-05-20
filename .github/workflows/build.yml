@@ -33,7 +33,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3-dev build-essential git zip unzip openjdk-17-jdk
+          sudo apt install -y python3-dev build-essential git zip unzip openjdk-11-jdk
           java -version
 
       - name: Set up Android SDK
@@ -72,6 +72,7 @@ jobs:
         env:
           ANDROID_HOME: /opt/android-sdk
           ANDROIDSDKROOT: /opt/android-sdk
+          JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64
           BUILD_NUMBER: ${{ github.run_number }}
 
       - name: List APK output
