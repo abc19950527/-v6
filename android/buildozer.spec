@@ -46,8 +46,8 @@ build_dir = ./.buildozer
 # App requirements
 requirements = hostpython3,kivy,sqlite3,android,pyjnius,pygments,requests
 
-# 使用setup-android提供的SDK
-android.sdk_path = /opt/android-sdk
+# 使用系统SDK
+android.sdk_path = /usr/local/lib/android/sdk
 
 # Android API level
 android.api = 33
