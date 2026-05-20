@@ -78,10 +78,18 @@ jobs:
           export ANDROID_NDK_HOME=/usr/local/lib/android/sdk/ndk/25.2.5
           export PATH=$JAVA_HOME/bin:$PATH
           
-          # 接受所有 Android SDK licenses
+          # 清理 buildozer 缓存
+          rm -rf ~/.buildozer
+          
+          # 为 buildozer 创建符号链接到预装的 SDK
+          mkdir -p ~/.buildozer/android/platform
+          ln -sf $ANDROID_HOME ~/.buildozer/android/platform/android-sdk
+          
+          # 接受所有 Android SDK licenses（包括 buildozer 的 SDK）
           mkdir -p ~/.android
           echo -e "\n24333f8a63b6825ea9c5514f83c2829b004d1fee" > ~/.android/repositories.cfg
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
+          yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
           
           cd android
           buildozer android debug
