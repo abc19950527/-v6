@@ -28,27 +28,31 @@ jobs:
           sudo apt update
           sudo apt install -y python3-dev build-essential git zip unzip openjdk-17-jdk wget
 
-      - name: Set Java
+      - name: Set Java environment
         run: |
           sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
           sudo update-alternatives --set javac /usr/lib/jvm/java-17-openjdk-amd64/bin/javac
 
-      - name: Download and setup Android SDK
+      - name: Download Android SDK Command Line Tools
         run: |
           export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
           export ANDROID_HOME=$HOME/android-sdk
-          mkdir -p $ANDROID_HOME
+          mkdir -p $ANDROID_HOME/cmdline-tools
           
-          # 下载 cmdline-tools
           cd /tmp
           wget -q "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip" -O cmdline.zip
           unzip -q cmdline.zip
-          mkdir -p $ANDROID_HOME/cmdline-tools
           mv cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+          rm cmdline.zip
+
+      - name: Install Android SDK components
+        run: |
+          export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
           
-          # 安装 SDK 组件
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+          yes | sdkmanager --licenses > /dev/null 2>&1
+          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
       - name: Download Android NDK
         run: |
@@ -57,7 +61,6 @@ jobs:
           NDK_DIR="$ANDROID_HOME/ndk/$NDK_VERSION"
           
           if [ ! -d "$NDK_DIR" ]; then
-            echo "下载 Android NDK $NDK_VERSION..."
             cd /tmp
             wget -q "https://dl.google.com/android/repository/android-ndk-$NDK_VERSION-linux.zip" -O ndk.zip
             unzip -q ndk.zip
@@ -65,21 +68,28 @@ jobs:
             mv android-ndk-$NDK_VERSION "$NDK_DIR"
             rm ndk.zip
           fi
-          echo "NDK目录: $NDK_DIR"
-          ls $NDK_DIR
 
       - name: Install Python dependencies
         run: |
-          pip install --upgrade pip
+          pip install --upgrade pip wheel setuptools
           pip install cython==0.29.36
           pip install buildozer==1.5.0
           pip install kivy==2.3.0
 
-      - name: Configure buildozer
+      - name: Prepare Android licenses
         run: |
           mkdir -p ~/.android
           touch ~/.android/repositories.cfg
           mkdir -p ~/.buildozer
+
+      - name: Update buildozer.spec
+        run: |
+          cd android
+          
+          # 更新 buildozer.spec 使用本地 SDK
+          sed -i 's|android.sdk_path = /usr/local/lib/android/sdk|android.sdk_path = /home/runner/android-sdk|' buildozer.spec
+          sed -i 's|android.ndk_download = False|android.ndk_download = True|' buildozer.spec
+          sed -i 's|android.update_sdk = False|android.update_sdk = True|' buildozer.spec
 
       - name: Build debug APK
         run: |
@@ -95,14 +105,15 @@ jobs:
           JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
           ANDROID_HOME: /home/runner/android-sdk
           ANDROIDSDKROOT: /home/runner/android-sdk
-          ANDROID_NDK_ROOT: /home/runner/android-sdk/ndk/r28c
+          ANDROID_NDK_HOME: /home/runner/android-sdk/ndk/r28c
 
       - name: List APK output
         run: |
           ls -la android/bin/ 2>/dev/null || echo "APK目录不存在"
+          find android -name "*.apk" 2>/dev/null
 
       - name: Upload debug APK
-        if: always()
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: android-debug-apk
@@ -141,7 +152,7 @@ jobs:
           if (Test-Path desktop/dist) { Get-ChildItem desktop/dist -Recurse } else { Write-Host "Dist目录不存在" }
 
       - name: Upload desktop installer
-        if: always()
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: desktop-windows-app

@@ -46,20 +46,11 @@ build_dir = ./.buildozer
 # App requirements
 requirements = hostpython3,kivy,sqlite3,android,pyjnius,pygments,requests
 
-# 使用系统SDK
-android.sdk_path = /usr/local/lib/android/sdk
-
 # Android API level
 android.api = 33
 
 # NDK API
 android.ndk_api = 21
-
-# 跳过 NDK 下载
-android.ndk_download = False
-
-# 跳过 SDK 更新
-android.update_sdk = False
 
 # Private storage
 android.private_storage = 1
