@@ -23,6 +23,51 @@ jobs:
         with:
           python-version: '3.10'
 
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y python3-dev build-essential git zip unzip openjdk-17-jdk wget
+
+      - name: Set Java
+        run: |
+          sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
+          sudo update-alternatives --set javac /usr/lib/jvm/java-17-openjdk-amd64/bin/javac
+
+      - name: Download and setup Android SDK
+        run: |
+          export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+          export ANDROID_HOME=$HOME/android-sdk
+          mkdir -p $ANDROID_HOME
+          
+          # 下载 cmdline-tools
+          cd /tmp
+          wget -q "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip" -O cmdline.zip
+          unzip -q cmdline.zip
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          mv cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+          
+          # 安装 SDK 组件
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+
+      - name: Download Android NDK
+        run: |
+          export ANDROID_HOME=$HOME/android-sdk
+          NDK_VERSION="r28c"
+          NDK_DIR="$ANDROID_HOME/ndk/$NDK_VERSION"
+          
+          if [ ! -d "$NDK_DIR" ]; then
+            echo "下载 Android NDK $NDK_VERSION..."
+            cd /tmp
+            wget -q "https://dl.google.com/android/repository/android-ndk-$NDK_VERSION-linux.zip" -O ndk.zip
+            unzip -q ndk.zip
+            mkdir -p "$ANDROID_HOME/ndk"
+            mv android-ndk-$NDK_VERSION "$NDK_DIR"
+            rm ndk.zip
+          fi
+          echo "NDK目录: $NDK_DIR"
+          ls $NDK_DIR
+
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
@@ -30,112 +75,27 @@ jobs:
           pip install buildozer==1.5.0
           pip install kivy==2.3.0
 
-      - name: Install system dependencies
+      - name: Configure buildozer
         run: |
-          sudo apt update
-          sudo apt install -y python3-dev build-essential git zip unzip openjdk-11-jdk
-          sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
-          sudo update-alternatives --set javac /usr/lib/jvm/java-11-openjdk-amd64/bin/javac
-          java -version
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: 33
-          build-tools: 33.0.2
-          accept-licences: true
-
-      - name: Download Android NDK
-        run: |
-          NDK_VERSION="r28c"
-          NDK_DIR="$HOME/.buildozer/android/platform/android-ndk-$NDK_VERSION"
-          
-          # 先创建目录
-          mkdir -p "$HOME/.buildozer/android/platform"
-          
-          if [ ! -d "$NDK_DIR" ]; then
-            echo "下载 Android NDK $NDK_VERSION..."
-            wget -q "https://dl.google.com/android/repository/android-ndk-$NDK_VERSION-linux.zip" -O /tmp/ndk.zip
-            unzip -q /tmp/ndk.zip -d "$HOME/.buildozer/android/platform/"
-            rm /tmp/ndk.zip
-          fi
-          
-          # 创建符号链接让buildozer找到NDK
-          ln -sf "$NDK_DIR" "$HOME/.buildozer/android/platform/android-ndk"
-          
-          echo "=== NDK验证 ==="
-          ls -la "$HOME/.buildozer/android/platform/"
-
-      - name: Setup buildozer SDK structure
-        run: |
-          SYSTEM_SDK="/usr/local/lib/android/sdk"
-          BUILDOZER_SDK="$HOME/.buildozer/android/platform/android-sdk"
-          
-          mkdir -p "$BUILDOZER_SDK"
-          
-          # 复制系统SDK组件
-          for dir in build-tools platforms platform-tools licenses ndk; do
-            if [ -d "$SYSTEM_SDK/$dir" ]; then
-              cp -r "$SYSTEM_SDK/$dir" "$BUILDOZER_SDK/"
-            fi
-          done
-          
-          # setup-android将cmdline-tools安装到16.0目录
-          # 创建buildozer期望的tools/bin结构
-          mkdir -p "$BUILDOZER_SDK/tools/bin"
-          if [ -f "$SYSTEM_SDK/cmdline-tools/16.0/bin/sdkmanager" ]; then
-            echo "使用cmdline-tools 16.0"
-            cp "$SYSTEM_SDK/cmdline-tools/16.0/bin/sdkmanager" "$BUILDOZER_SDK/tools/bin/"
-            cp "$SYSTEM_SDK/cmdline-tools/16.0/bin/sdkmanager.bat" "$BUILDOZER_SDK/tools/bin/" 2>/dev/null || true
-            if [ -d "$SYSTEM_SDK/cmdline-tools/16.0/bin/lib" ]; then
-              cp -r "$SYSTEM_SDK/cmdline-tools/16.0/bin/lib" "$BUILDOZER_SDK/tools/bin/"
-              echo "复制lib目录成功"
-            fi
-            chmod +x "$BUILDOZER_SDK/tools/bin/sdkmanager"
-          elif [ -f "$SYSTEM_SDK/cmdline-tools/latest/bin/sdkmanager" ]; then
-            echo "使用cmdline-tools latest"
-            cp "$SYSTEM_SDK/cmdline-tools/latest/bin/sdkmanager" "$BUILDOZER_SDK/tools/bin/"
-            cp "$SYSTEM_SDK/cmdline-tools/latest/bin/sdkmanager.bat" "$BUILDOZER_SDK/tools/bin/" 2>/dev/null || true
-            if [ -d "$SYSTEM_SDK/cmdline-tools/latest/bin/lib" ]; then
-              cp -r "$SYSTEM_SDK/cmdline-tools/latest/bin/lib" "$BUILDOZER_SDK/tools/bin/"
-              echo "复制lib目录成功"
-            fi
-            chmod +x "$BUILDOZER_SDK/tools/bin/sdkmanager"
-          fi
-          
           mkdir -p ~/.android
           touch ~/.android/repositories.cfg
-          
-          echo "=== SDK结构验证 ==="
-          ls -la "$BUILDOZER_SDK/"
-          ls -la "$BUILDOZER_SDK/tools/bin/" 2>/dev/null || echo "tools/bin不存在"
-          ls "$BUILDOZER_SDK/tools/bin/lib/" 2>/dev/null | head -5 || echo "lib不存在"
-          
-          # 测试sdkmanager
-          echo "=== 测试sdkmanager ==="
-          export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
-          export PATH=$JAVA_HOME/bin:$PATH
-          if [ -f "$BUILDOZER_SDK/tools/bin/sdkmanager" ]; then
-            file "$BUILDOZER_SDK/tools/bin/sdkmanager"
-            "$BUILDOZER_SDK/tools/bin/sdkmanager" --version 2>&1 || echo "测试失败"
-          fi
+          mkdir -p ~/.buildozer
 
       - name: Build debug APK
         run: |
-          export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+          export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+          export ANDROID_HOME=$HOME/android-sdk
+          export ANDROIDSDKROOT=$ANDROID_HOME
+          export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/r28c
           export PATH=$JAVA_HOME/bin:$PATH
-          export ANDROID_HOME=/usr/local/lib/android/sdk
-          export ANDROIDSDKROOT=/usr/local/lib/android/sdk
-          java -version
-          echo "ANDROID_HOME=$ANDROID_HOME"
+          
           cd android
           buildozer android debug
         env:
-          ANDROID_HOME: /usr/local/lib/android/sdk
-          ANDROIDSDKROOT: /usr/local/lib/android/sdk
-          ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/27.3.13750724
-          JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64
-          BUILD_NUMBER: ${{ github.run_number }}
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+          ANDROID_HOME: /home/runner/android-sdk
+          ANDROIDSDKROOT: /home/runner/android-sdk
+          ANDROID_NDK_ROOT: /home/runner/android-sdk/ndk/r28c
 
       - name: List APK output
         run: |
