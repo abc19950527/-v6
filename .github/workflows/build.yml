@@ -80,18 +80,32 @@ jobs:
           ln -sf "$SYSTEM_SDK/platform-tools" "$BUILDOZER_SDK/"
           ln -sf "$SYSTEM_SDK/licenses" "$BUILDOZER_SDK/"
           
-          # 复制cmdline-tools（包含sdkmanager）
+          # 复制整个cmdline-tools目录
           if [ -d "$SYSTEM_SDK/cmdline-tools" ]; then
             cp -r "$SYSTEM_SDK/cmdline-tools" "$BUILDOZER_SDK/"
           fi
           
-          # 创建buildozer期望的tools/bin目录并复制sdkmanager
+          # 查找实际的cmdline-tools bin目录
+          CMDLINE_BIN=""
+          for ver in latest 16.0 15.0 14.0 13.0; do
+            if [ -f "$SYSTEM_SDK/cmdline-tools/$ver/bin/sdkmanager" ]; then
+              CMDLINE_BIN="$SYSTEM_SDK/cmdline-tools/$ver/bin"
+              echo "找到cmdline-tools: $CMDLINE_BIN"
+              break
+            fi
+          done
+          
+          # 创建buildozer期望的tools/bin目录并复制sdkmanager及其依赖
           mkdir -p "$BUILDOZER_SDK/tools/bin"
-          if [ -f "$SYSTEM_SDK/cmdline-tools/latest/bin/sdkmanager" ]; then
-            cp "$SYSTEM_SDK/cmdline-tools/latest/bin/sdkmanager" "$BUILDOZER_SDK/tools/bin/"
-            cp "$SYSTEM_SDK/cmdline-tools/latest/bin/sdkmanager.bat" "$BUILDOZER_SDK/tools/bin/" 2>/dev/null || true
-            if [ -d "$SYSTEM_SDK/cmdline-tools/latest/bin/lib" ]; then
-              cp -r "$SYSTEM_SDK/cmdline-tools/latest/bin/lib" "$BUILDOZER_SDK/tools/bin/"
+          if [ -n "$CMDLINE_BIN" ]; then
+            cp "$CMDLINE_BIN/sdkmanager" "$BUILDOZER_SDK/tools/bin/"
+            cp "$CMDLINE_BIN/sdkmanager.bat" "$BUILDOZER_SDK/tools/bin/" 2>/dev/null || true
+            # 复制lib目录（JAR文件）
+            if [ -d "$CMDLINE_BIN/lib" ]; then
+              cp -r "$CMDLINE_BIN/lib" "$BUILDOZER_SDK/tools/bin/"
+              echo "复制lib目录成功"
+            else
+              echo "警告: lib目录不存在于 $CMDLINE_BIN"
             fi
             chmod +x "$BUILDOZER_SDK/tools/bin/sdkmanager"
           fi
@@ -102,6 +116,7 @@ jobs:
           echo "=== SDK结构验证 ==="
           ls -la "$BUILDOZER_SDK/"
           ls -la "$BUILDOZER_SDK/tools/bin/" 2>/dev/null || echo "tools/bin不存在"
+          ls "$BUILDOZER_SDK/tools/bin/lib/" 2>/dev/null | head -5 || echo "lib目录不存在"
           
           # 测试sdkmanager
           echo "=== 测试sdkmanager ==="
