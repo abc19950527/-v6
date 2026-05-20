@@ -62,4 +62,18 @@ jobs:
           yes | sdkmanager --licenses > /dev/null 2>&1 || true
           
           cd android
+          
+          # 首次运行 buildozer 让它下载 SDK
+          buildozer android debug || true
+          
+          # buildozer 下载 SDK 后，再次接受许可证
+          if [ -d ~/.buildozer/android/platform/android-sdk ]; then
+            mkdir -p ~/.buildozer/android/platform/android-sdk/.android
+            cp ~/.android/repositories.cfg ~/.buildozer/android/platform/android-sdk/.android/
+            if [ -f ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager ]; then
+              yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=~/.buildozer/android/platform/android-sdk --licenses > /dev/null 2>&1 || true
+            fi
+          fi
+          
+          # 再次运行 buildozer
           buildozer android debug
