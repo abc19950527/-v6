@@ -49,6 +49,9 @@ requirements = hostpython3,kivy,sqlite3,android,pyjnius,pygments,requests
 # Android API level
 android.api = 33
 
+# Build tools version
+android.build_tools_version = 37.0.0
+
 # NDK API
 android.ndk_api = 21
 
