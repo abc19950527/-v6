@@ -70,11 +70,16 @@ jobs:
 
       - name: Build debug APK
         run: |
+          # 强制设置 JAVA_HOME 为 Java 11
+          export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+          export PATH=$JAVA_HOME/bin:$PATH
+          java -version
           cd android
           buildozer android debug
         env:
           ANDROID_HOME: /opt/android-sdk
           ANDROIDSDKROOT: /opt/android-sdk
+          JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64
           BUILD_NUMBER: ${{ github.run_number }}
 
       - name: List APK output
