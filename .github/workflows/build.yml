@@ -52,7 +52,25 @@ jobs:
           SYSTEM_SDK="/usr/local/lib/android/sdk"
           BUILDOZER_SDK="$HOME/.buildozer/android/platform/android-sdk"
           
-          # 删除旧的软链接并创建新目录
+          echo "=== 查看系统SDK结构 ==="
+          ls -la "$SYSTEM_SDK/"
+          
+          # 找到cmdline-tools的位置
+          if [ -d "$SYSTEM_SDK/cmdline-tools/latest" ]; then
+            CMDLINE_TOOLS="$SYSTEM_SDK/cmdline-tools/latest"
+          elif [ -d "$SYSTEM_SDK/cmdline-tools/16.0" ]; then
+            CMDLINE_TOOLS="$SYSTEM_SDK/cmdline-tools/16.0"
+          else
+            # 列出所有cmdline-tools子目录
+            ls -la "$SYSTEM_SDK/cmdline-tools/" 2>/dev/null || echo "cmdline-tools目录不存在"
+            CMDLINE_TOOLS="$SYSTEM_SDK/cmdline-tools/latest"
+          fi
+          
+          echo "使用cmdline-tools: $CMDLINE_TOOLS"
+          echo "=== cmdline-tools内容 ==="
+          ls -la "$CMDLINE_TOOLS/"
+          
+          # 删除旧的SDK目录并创建新目录
           rm -rf "$BUILDOZER_SDK"
           mkdir -p "$BUILDOZER_SDK"
           
@@ -66,23 +84,18 @@ jobs:
           # buildozer期望tools/bin/sdkmanager，创建兼容结构
           mkdir -p "$BUILDOZER_SDK/tools/bin"
           
-          # 找到cmdline-tools中的sdkmanager
-          if [ -f "$SYSTEM_SDK/cmdline-tools/latest/bin/sdkmanager" ]; then
-            CMDLINE_TOOLS_BIN="$SYSTEM_SDK/cmdline-tools/latest/bin"
-          elif [ -f "$SYSTEM_SDK/cmdline-tools/16.0/bin/sdkmanager" ]; then
-            CMDLINE_TOOLS_BIN="$SYSTEM_SDK/cmdline-tools/16.0/bin"
-          else
-            CMDLINE_TOOLS_BIN="$SYSTEM_SDK/cmdline-tools/latest/bin"
+          # 复制sdkmanager
+          if [ -f "$CMDLINE_TOOLS/bin/sdkmanager" ]; then
+            cp "$CMDLINE_TOOLS/bin/sdkmanager" "$BUILDOZER_SDK/tools/bin/"
+            chmod +x "$BUILDOZER_SDK/tools/bin/sdkmanager"
+            cp "$CMDLINE_TOOLS/bin/sdkmanager.bat" "$BUILDOZER_SDK/tools/bin/" 2>/dev/null || true
           fi
           
-          # 复制sdkmanager及其依赖
-          cp "$CMDLINE_TOOLS_BIN/sdkmanager" "$BUILDOZER_SDK/tools/bin/"
-          chmod +x "$BUILDOZER_SDK/tools/bin/sdkmanager"
-          cp "$CMDLINE_TOOLS_BIN/sdkmanager.bat" "$BUILDOZER_SDK/tools/bin/" 2>/dev/null || true
-          
-          # 复制sdkmanager的lib目录（包含所有依赖JAR）
-          rm -rf "$BUILDOZER_SDK/tools/bin/lib"
-          cp -r "$CMDLINE_TOOLS_BIN/lib" "$BUILDOZER_SDK/tools/bin/"
+          # 复制lib目录（如果存在）
+          if [ -d "$CMDLINE_TOOLS/lib" ]; then
+            rm -rf "$BUILDOZER_SDK/tools/bin/lib"
+            cp -r "$CMDLINE_TOOLS/lib" "$BUILDOZER_SDK/tools/bin/"
+          fi
           
           # 确保许可证存在
           mkdir -p "$BUILDOZER_SDK/licenses"
@@ -95,7 +108,7 @@ jobs:
           echo "=== buildozer SDK结构 ==="
           ls -la "$BUILDOZER_SDK/"
           echo "=== tools/bin内容 ==="
-          ls -la "$BUILDOZER_SDK/tools/bin/"
+          ls -la "$BUILDOZER_SDK/tools/bin/" 2>/dev/null || echo "tools/bin不存在"
 
       - name: Build debug APK
         run: |
