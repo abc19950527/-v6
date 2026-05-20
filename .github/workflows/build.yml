@@ -87,6 +87,7 @@ jobs:
           echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> "$BUILDOZER_SDK/licenses/android-sdk-license"
           echo "e6b7c2ab7fa2298c15165e9583d0acf0b04a2232" >> "$BUILDOZER_SDK/licenses/google-gdk-license"
           touch "$BUILDOZER_SDK/licenses/android-sdk-preview-license"
+          mkdir -p ~/.android
           touch ~/.android/repositories.cfg
           
           echo "=== buildozer SDK结构 ==="
