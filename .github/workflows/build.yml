@@ -50,6 +50,9 @@ jobs:
           NDK_VERSION="r28c"
           NDK_DIR="$HOME/.buildozer/android/platform/android-ndk-$NDK_VERSION"
           
+          # 先创建目录
+          mkdir -p "$HOME/.buildozer/android/platform"
+          
           if [ ! -d "$NDK_DIR" ]; then
             echo "下载 Android NDK $NDK_VERSION..."
             wget -q "https://dl.google.com/android/repository/android-ndk-$NDK_VERSION-linux.zip" -O /tmp/ndk.zip
