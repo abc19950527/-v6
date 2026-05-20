@@ -60,13 +60,20 @@ jobs:
           # 复制完整SDK内容
           cp -r $ANDROID_HOME/* ~/.buildozer/android/platform/android-sdk/
           
-          # 删除不兼容的旧tools，用cmdline-tools替代
+          # 删除旧tools目录并重建，复制cmdline-tools的sdkmanager
           rm -rf ~/.buildozer/android/platform/android-sdk/tools
           mkdir -p ~/.buildozer/android/platform/android-sdk/tools/bin
           
-          # 创建正确的软链接（绝对路径更可靠）
-          ln -sf /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
-          ln -sf /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager.bat
+          # 直接复制sdkmanager及其依赖库
+          cp /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
+          chmod +x ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
+          
+          # 复制sdkmanager需要的库
+          mkdir -p ~/.buildozer/android/platform/android-sdk/tools/bin/lib
+          cp -r /opt/android-sdk/cmdline-tools/latest/lib ~/.buildozer/android/platform/android-sdk/tools/bin/
+          
+          # 创建sdkmanager.bat
+          cp /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager.bat ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager.bat 2>/dev/null || true
           
           # 复制许可证
           mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
