@@ -49,10 +49,13 @@ requirements = hostpython3,kivy,sqlite3,android,pyjnius,pygments,requests
 # 使用系统SDK
 android.sdk_path = /usr/local/lib/android/sdk
 
+# 指定cmdline-tools路径
+android.cmdline_sdk_path = /usr/local/lib/android/sdk/cmdline-tools/latest
+
 # Android API level
 android.api = 33
 
-# Android NDK (let buildozer download)
+# Android NDK (使用系统已安装的)
 android.ndk = 25b
 
 # NDK API
