@@ -86,10 +86,12 @@ jobs:
         run: |
           cd android
           
-          # 更新 buildozer.spec 使用本地 SDK
-          sed -i 's|android.sdk_path = /usr/local/lib/android/sdk|android.sdk_path = /home/runner/android-sdk|' buildozer.spec
-          sed -i 's|android.ndk_download = False|android.ndk_download = True|' buildozer.spec
-          sed -i 's|android.update_sdk = False|android.update_sdk = True|' buildozer.spec
+          # 设置 SDK 路径和 NDK
+          sed -i 's|android.sdk_path = .*|android.sdk_path = /home/runner/android-sdk|' buildozer.spec
+          # 确保 NDK 配置正确
+          if grep -q "android.ndk_path" buildozer.spec; then
+            sed -i 's|android.ndk_path = .*|android.ndk_path = /home/runner/android-sdk/ndk/r28c|' buildozer.spec
+          fi
 
       - name: Build debug APK
         run: |

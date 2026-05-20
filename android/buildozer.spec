@@ -46,6 +46,9 @@ build_dir = ./.buildozer
 # App requirements
 requirements = hostpython3,kivy,sqlite3,android,pyjnius,pygments,requests
 
+# Android SDK path
+android.sdk_path = /home/runner/android-sdk
+
 # Android API level
 android.api = 33
 
