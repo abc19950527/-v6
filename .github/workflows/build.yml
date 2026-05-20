@@ -9,7 +9,7 @@ on:
 
 jobs:
   # ============================================
-  # Android APK 构建
+  # Android APK 构建 - 使用 GitHub Actions 自带 SDK
   # ============================================
   build-android:
     runs-on: ubuntu-latest
@@ -26,48 +26,26 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3-dev build-essential git zip unzip openjdk-17-jdk wget
+          sudo apt install -y python3-dev build-essential git zip unzip openjdk-17-jdk
 
       - name: Set Java environment
         run: |
           sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
           sudo update-alternatives --set javac /usr/lib/jvm/java-17-openjdk-amd64/bin/javac
 
-      - name: Download Android SDK Command Line Tools
+      - name: Check pre-installed Android SDK
         run: |
-          export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-          export ANDROID_HOME=$HOME/android-sdk
-          mkdir -p $ANDROID_HOME/cmdline-tools
-          
-          cd /tmp
-          wget -q "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip" -O cmdline.zip
-          unzip -q cmdline.zip
-          mv cmdline-tools $ANDROID_HOME/cmdline-tools/latest
-          rm cmdline.zip
-
-      - name: Install Android SDK components
-        run: |
-          export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/build-tools/33.0.2:$PATH
-          
-          yes | sdkmanager --licenses > /dev/null 2>&1
-          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2" "build-tools;34.0.0"
-
-      - name: Download Android NDK
-        run: |
-          export ANDROID_HOME=$HOME/android-sdk
-          NDK_VERSION="r28c"
-          NDK_DIR="$ANDROID_HOME/ndk/$NDK_VERSION"
-          
-          if [ ! -d "$NDK_DIR" ]; then
-            cd /tmp
-            wget -q "https://dl.google.com/android/repository/android-ndk-$NDK_VERSION-linux.zip" -O ndk.zip
-            unzip -q ndk.zip
-            mkdir -p "$ANDROID_HOME/ndk"
-            mv android-ndk-$NDK_VERSION "$NDK_DIR"
-            rm ndk.zip
-          fi
+          echo "=== Pre-installed SDK at /usr/local/lib/android/sdk ==="
+          ls -la /usr/local/lib/android/sdk/
+          echo ""
+          echo "=== Build Tools ==="
+          ls /usr/local/lib/android/sdk/build-tools/ 2>/dev/null || echo "None"
+          echo ""
+          echo "=== Platforms ==="
+          ls /usr/local/lib/android/sdk/platforms/ 2>/dev/null || echo "None"
+          echo ""
+          echo "=== NDK ==="
+          ls /usr/local/lib/android/sdk/ndk/ 2>/dev/null || echo "None"
 
       - name: Install Python dependencies
         run: |
@@ -85,39 +63,28 @@ jobs:
       - name: Update buildozer.spec
         run: |
           cd android
-          
-          # 设置 SDK 路径和 NDK
-          sed -i 's|android.sdk_path = .*|android.sdk_path = /home/runner/android-sdk|' buildozer.spec
-          # 确保 NDK 配置正确
+          # 使用 GitHub Actions 自带的 SDK
+          sed -i 's|android.sdk_path = .*|android.sdk_path = /usr/local/lib/android/sdk|' buildozer.spec
+          # 使用已有的 NDK
           if grep -q "android.ndk_path" buildozer.spec; then
-            sed -i 's|android.ndk_path = .*|android.ndk_path = /home/runner/android-sdk/ndk/r28c|' buildozer.spec
+            sed -i 's|android.ndk_path = .*|android.ndk_path = /usr/local/lib/android/sdk/ndk/25.2.5|' buildozer.spec
           fi
 
       - name: Build debug APK
         run: |
           export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-          export ANDROID_HOME=$HOME/android-sdk
-          export ANDROIDSDKROOT=$ANDROID_HOME
-          export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/r28c
-          export PATH=$JAVA_HOME/bin:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/33.0.2:$PATH
-          
-          # 清理 buildozer 缓存并创建符号链接
-          rm -rf ~/.buildozer
-          mkdir -p ~/.buildozer/android/platform
-          ln -sf $ANDROID_HOME ~/.buildozer/android/platform/android-sdk
-          
-          # 创建旧版 tools/bin 链接（buildozer 期望的结构）
-          mkdir -p ~/.buildozer/android/platform/android-sdk/tools/bin
-          cp $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager ~/.buildozer/android/platform/android-sdk/tools/bin/
-          cp $ANDROID_HOME/cmdline-tools/latest/bin/*.jar ~/.buildozer/android/platform/android-sdk/tools/lib/ 2>/dev/null || true
+          export ANDROID_HOME=/usr/local/lib/android/sdk
+          export ANDROIDSDKROOT=/usr/local/lib/android/sdk
+          export ANDROID_NDK_HOME=/usr/local/lib/android/sdk/ndk/25.2.5
+          export PATH=$JAVA_HOME/bin:$PATH
           
           cd android
           buildozer android debug
         env:
           JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
-          ANDROID_HOME: /home/runner/android-sdk
-          ANDROIDSDKROOT: /home/runner/android-sdk
-          ANDROID_NDK_HOME: /home/runner/android-sdk/ndk/r28c
+          ANDROID_HOME: /usr/local/lib/android/sdk
+          ANDROIDSDKROOT: /usr/local/lib/android/sdk
+          ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/25.2.5
 
       - name: List APK output
         run: |
