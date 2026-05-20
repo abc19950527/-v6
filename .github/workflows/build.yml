@@ -54,9 +54,15 @@ jobs:
 
       - name: Prepare buildozer SDK directory
         run: |
-          # 创建buildozer SDK目录并复制完整SDK（包含sdkmanager）
+          # 创建buildozer SDK目录并复制完整SDK
           mkdir -p ~/.buildozer/android/platform
           cp -r $ANDROID_HOME ~/.buildozer/android/platform/android-sdk
+          # 用cmdline-tools替换不兼容的tools目录
+          rm -rf ~/.buildozer/android/platform/android-sdk/tools
+          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools
+          cp -r $ANDROID_HOME/cmdline-tools ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
+          # 创建软链接到标准位置
+          ln -sf cmdline-tools/latest ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
           # 复制许可证
           mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
           echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
