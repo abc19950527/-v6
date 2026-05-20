@@ -54,26 +54,41 @@ jobs:
 
       - name: Prepare buildozer SDK directory
         run: |
+          # 检查SDK实际位置
+          echo "=== 检查SDK目录 ==="
+          ls -la /opt/android-sdk/ 2>/dev/null || echo "opt不存在"
+          ls -la /usr/local/lib/android/sdk/ 2>/dev/null || echo "usr不存在"
+          
+          # 找到cmdline-tools的实际位置
+          if [ -f /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager ]; then
+            SDK_ROOT="/opt/android-sdk"
+          elif [ -f /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager ]; then
+            SDK_ROOT="/usr/local/lib/android/sdk"
+          else
+            SDK_ROOT="/opt/android-sdk"
+          fi
+          echo "使用SDK_ROOT=$SDK_ROOT"
+          
           # 创建buildozer SDK目录
           mkdir -p ~/.buildozer/android/platform/android-sdk
           
           # 复制完整SDK内容
-          cp -r $ANDROID_HOME/* ~/.buildozer/android/platform/android-sdk/
+          cp -r $SDK_ROOT/* ~/.buildozer/android/platform/android-sdk/
           
-          # 删除旧tools目录并重建，复制cmdline-tools的sdkmanager
+          # 删除旧tools目录并重建
           rm -rf ~/.buildozer/android/platform/android-sdk/tools
           mkdir -p ~/.buildozer/android/platform/android-sdk/tools/bin
           
           # 直接复制sdkmanager及其依赖库
-          cp /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
+          cp $SDK_ROOT/cmdline-tools/latest/bin/sdkmanager ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
           chmod +x ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
           
           # 复制sdkmanager需要的库
           mkdir -p ~/.buildozer/android/platform/android-sdk/tools/bin/lib
-          cp -r /opt/android-sdk/cmdline-tools/latest/lib ~/.buildozer/android/platform/android-sdk/tools/bin/
+          cp -r $SDK_ROOT/cmdline-tools/latest/lib ~/.buildozer/android/platform/android-sdk/tools/bin/
           
           # 创建sdkmanager.bat
-          cp /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager.bat ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager.bat 2>/dev/null || true
+          cp $SDK_ROOT/cmdline-tools/latest/bin/sdkmanager.bat ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager.bat 2>/dev/null || true
           
           # 复制许可证
           mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
@@ -86,7 +101,6 @@ jobs:
           
           echo "=== SDK准备完成 ==="
           ls -la ~/.buildozer/android/platform/android-sdk/tools/bin/
-          file ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
 
       - name: Build debug APK
         run: |
