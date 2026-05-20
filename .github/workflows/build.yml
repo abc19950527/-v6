@@ -74,35 +74,33 @@ jobs:
           mkdir -p "$BUILDOZER_SDK"
           
           # 复制系统SDK组件
-          for dir in build-tools platforms platform-tools licenses; do
+          for dir in build-tools platforms platform-tools licenses ndk; do
             if [ -d "$SYSTEM_SDK/$dir" ]; then
               cp -r "$SYSTEM_SDK/$dir" "$BUILDOZER_SDK/"
             fi
           done
           
-          # 复制整个cmdline-tools目录
-          if [ -d "$SYSTEM_SDK/cmdline-tools" ]; then
-            cp -r "$SYSTEM_SDK/cmdline-tools" "$BUILDOZER_SDK/"
-          fi
-          
-          # 查找有完整lib的cmdline-tools
-          for ver in 16.0 15.0 14.0 13.0 latest; do
-            if [ -d "$SYSTEM_SDK/cmdline-tools/$ver/bin/lib" ]; then
-              echo "找到完整cmdline-tools: $ver"
-              # 使用这个版本创建tools/bin
-              mkdir -p "$BUILDOZER_SDK/tools/bin"
-              cp "$SYSTEM_SDK/cmdline-tools/$ver/bin/sdkmanager" "$BUILDOZER_SDK/tools/bin/"
-              cp "$SYSTEM_SDK/cmdline-tools/$ver/bin/sdkmanager.bat" "$BUILDOZER_SDK/tools/bin/" 2>/dev/null || true
-              cp -r "$SYSTEM_SDK/cmdline-tools/$ver/bin/lib" "$BUILDOZER_SDK/tools/bin/"
-              chmod +x "$BUILDOZER_SDK/tools/bin/sdkmanager"
-              break
+          # setup-android将cmdline-tools安装到16.0目录
+          # 创建buildozer期望的tools/bin结构
+          mkdir -p "$BUILDOZER_SDK/tools/bin"
+          if [ -f "$SYSTEM_SDK/cmdline-tools/16.0/bin/sdkmanager" ]; then
+            echo "使用cmdline-tools 16.0"
+            cp "$SYSTEM_SDK/cmdline-tools/16.0/bin/sdkmanager" "$BUILDOZER_SDK/tools/bin/"
+            cp "$SYSTEM_SDK/cmdline-tools/16.0/bin/sdkmanager.bat" "$BUILDOZER_SDK/tools/bin/" 2>/dev/null || true
+            if [ -d "$SYSTEM_SDK/cmdline-tools/16.0/bin/lib" ]; then
+              cp -r "$SYSTEM_SDK/cmdline-tools/16.0/bin/lib" "$BUILDOZER_SDK/tools/bin/"
+              echo "复制lib目录成功"
             fi
-          done
-          
-          # 检查tools/bin/lib是否存在
-          if [ ! -d "$BUILDOZER_SDK/tools/bin/lib" ]; then
-            echo "警告: tools/bin/lib仍不存在，查找其他位置..."
-            find "$BUILDOZER_SDK" -name "*.jar" 2>/dev/null | head -5
+            chmod +x "$BUILDOZER_SDK/tools/bin/sdkmanager"
+          elif [ -f "$SYSTEM_SDK/cmdline-tools/latest/bin/sdkmanager" ]; then
+            echo "使用cmdline-tools latest"
+            cp "$SYSTEM_SDK/cmdline-tools/latest/bin/sdkmanager" "$BUILDOZER_SDK/tools/bin/"
+            cp "$SYSTEM_SDK/cmdline-tools/latest/bin/sdkmanager.bat" "$BUILDOZER_SDK/tools/bin/" 2>/dev/null || true
+            if [ -d "$SYSTEM_SDK/cmdline-tools/latest/bin/lib" ]; then
+              cp -r "$SYSTEM_SDK/cmdline-tools/latest/bin/lib" "$BUILDOZER_SDK/tools/bin/"
+              echo "复制lib目录成功"
+            fi
+            chmod +x "$BUILDOZER_SDK/tools/bin/sdkmanager"
           fi
           
           mkdir -p ~/.android
