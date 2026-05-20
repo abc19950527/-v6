@@ -101,6 +101,11 @@ jobs:
           export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/r28c
           export PATH=$JAVA_HOME/bin:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/33.0.2:$PATH
           
+          # 清理 buildozer 缓存并创建符号链接
+          rm -rf ~/.buildozer
+          mkdir -p ~/.buildozer/android/platform
+          ln -sf $ANDROID_HOME ~/.buildozer/android/platform/android-sdk
+          
           cd android
           buildozer android debug
         env:
