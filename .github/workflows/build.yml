@@ -68,46 +68,41 @@ jobs:
 
       - name: Setup buildozer SDK structure
         run: |
-          # 使用setup-android的SDK作为基础
           SYSTEM_SDK="/usr/local/lib/android/sdk"
           BUILDOZER_SDK="$HOME/.buildozer/android/platform/android-sdk"
           
           mkdir -p "$BUILDOZER_SDK"
           
-          # 复制/链接系统SDK组件
-          ln -sf "$SYSTEM_SDK/build-tools" "$BUILDOZER_SDK/"
-          ln -sf "$SYSTEM_SDK/platforms" "$BUILDOZER_SDK/"
-          ln -sf "$SYSTEM_SDK/platform-tools" "$BUILDOZER_SDK/"
-          ln -sf "$SYSTEM_SDK/licenses" "$BUILDOZER_SDK/"
+          # 复制系统SDK组件
+          for dir in build-tools platforms platform-tools licenses; do
+            if [ -d "$SYSTEM_SDK/$dir" ]; then
+              cp -r "$SYSTEM_SDK/$dir" "$BUILDOZER_SDK/"
+            fi
+          done
           
           # 复制整个cmdline-tools目录
           if [ -d "$SYSTEM_SDK/cmdline-tools" ]; then
             cp -r "$SYSTEM_SDK/cmdline-tools" "$BUILDOZER_SDK/"
           fi
           
-          # 查找实际的cmdline-tools bin目录
-          CMDLINE_BIN=""
-          for ver in latest 16.0 15.0 14.0 13.0; do
-            if [ -f "$SYSTEM_SDK/cmdline-tools/$ver/bin/sdkmanager" ]; then
-              CMDLINE_BIN="$SYSTEM_SDK/cmdline-tools/$ver/bin"
-              echo "找到cmdline-tools: $CMDLINE_BIN"
+          # 查找有完整lib的cmdline-tools
+          for ver in 16.0 15.0 14.0 13.0 latest; do
+            if [ -d "$SYSTEM_SDK/cmdline-tools/$ver/bin/lib" ]; then
+              echo "找到完整cmdline-tools: $ver"
+              # 使用这个版本创建tools/bin
+              mkdir -p "$BUILDOZER_SDK/tools/bin"
+              cp "$SYSTEM_SDK/cmdline-tools/$ver/bin/sdkmanager" "$BUILDOZER_SDK/tools/bin/"
+              cp "$SYSTEM_SDK/cmdline-tools/$ver/bin/sdkmanager.bat" "$BUILDOZER_SDK/tools/bin/" 2>/dev/null || true
+              cp -r "$SYSTEM_SDK/cmdline-tools/$ver/bin/lib" "$BUILDOZER_SDK/tools/bin/"
+              chmod +x "$BUILDOZER_SDK/tools/bin/sdkmanager"
               break
             fi
           done
           
-          # 创建buildozer期望的tools/bin目录并复制sdkmanager及其依赖
-          mkdir -p "$BUILDOZER_SDK/tools/bin"
-          if [ -n "$CMDLINE_BIN" ]; then
-            cp "$CMDLINE_BIN/sdkmanager" "$BUILDOZER_SDK/tools/bin/"
-            cp "$CMDLINE_BIN/sdkmanager.bat" "$BUILDOZER_SDK/tools/bin/" 2>/dev/null || true
-            # 复制lib目录（JAR文件）
-            if [ -d "$CMDLINE_BIN/lib" ]; then
-              cp -r "$CMDLINE_BIN/lib" "$BUILDOZER_SDK/tools/bin/"
-              echo "复制lib目录成功"
-            else
-              echo "警告: lib目录不存在于 $CMDLINE_BIN"
-            fi
-            chmod +x "$BUILDOZER_SDK/tools/bin/sdkmanager"
+          # 检查tools/bin/lib是否存在
+          if [ ! -d "$BUILDOZER_SDK/tools/bin/lib" ]; then
+            echo "警告: tools/bin/lib仍不存在，查找其他位置..."
+            find "$BUILDOZER_SDK" -name "*.jar" 2>/dev/null | head -5
           fi
           
           mkdir -p ~/.android
@@ -116,7 +111,7 @@ jobs:
           echo "=== SDK结构验证 ==="
           ls -la "$BUILDOZER_SDK/"
           ls -la "$BUILDOZER_SDK/tools/bin/" 2>/dev/null || echo "tools/bin不存在"
-          ls "$BUILDOZER_SDK/tools/bin/lib/" 2>/dev/null | head -5 || echo "lib目录不存在"
+          ls "$BUILDOZER_SDK/tools/bin/lib/" 2>/dev/null | head -5 || echo "lib不存在"
           
           # 测试sdkmanager
           echo "=== 测试sdkmanager ==="
@@ -140,6 +135,7 @@ jobs:
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
           ANDROIDSDKROOT: /usr/local/lib/android/sdk
+          ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/27.3.13750724
           JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64
           BUILD_NUMBER: ${{ github.run_number }}
 
