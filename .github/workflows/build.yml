@@ -39,32 +39,74 @@ jobs:
           sudo update-alternatives --set javac /usr/lib/jvm/java-11-openjdk-amd64/bin/javac
           java -version
 
-      - name: Ensure Android SDK licenses
+      - name: Setup buildozer SDK directory
         run: |
-          mkdir -p ~/.android
+          SYSTEM_SDK="/usr/local/lib/android/sdk"
+          BUILDOZER_SDK="$HOME/.buildozer/android/platform/android-sdk"
+          
+          echo "=== 系统SDK目录 ==="
+          ls -la "$SYSTEM_SDK/"
+          ls -la "$SYSTEM_SDK/cmdline-tools/" 2>/dev/null || echo "无cmdline-tools"
+          
+          # 创建buildozer SDK目录
+          mkdir -p "$BUILDOZER_SDK"
+          
+          # 复制系统SDK内容到buildozer目录
+          rsync -a "$SYSTEM_SDK/" "$BUILDOZER_SDK/" --exclude='cmdline-tools' --exclude='tools'
+          
+          # 创建buildozer期望的tools/bin/sdkmanager结构
+          mkdir -p "$BUILDOZER_SDK/tools/bin"
+          
+          # 查找cmdline-tools
+          if [ -d "$SYSTEM_SDK/cmdline-tools/latest" ]; then
+            CMDLINE_BIN="$SYSTEM_SDK/cmdline-tools/latest/bin"
+          elif [ -d "$SYSTEM_SDK/cmdline-tools/16.0" ]; then
+            CMDLINE_BIN="$SYSTEM_SDK/cmdline-tools/16.0/bin"
+          else
+            echo "查找cmdline-tools:"
+            find "$SYSTEM_SDK" -name 'sdkmanager' -type f 2>/dev/null | head -5
+            CMDLINE_BIN=""
+          fi
+          
+          if [ -n "$CMDLINE_BIN" ] && [ -f "$CMDLINE_BIN/sdkmanager" ]; then
+            echo "复制sdkmanager从: $CMDLINE_BIN"
+            cp "$CMDLINE_BIN/sdkmanager" "$BUILDOZER_SDK/tools/bin/"
+            chmod +x "$BUILDOZER_SDK/tools/bin/sdkmanager"
+            # 复制.bat文件
+            cp "$CMDLINE_BIN/sdkmanager.bat" "$BUILDOZER_SDK/tools/bin/" 2>/dev/null || true
+            # 复制lib目录
+            if [ -d "$CMDLINE_BIN/lib" ]; then
+              cp -r "$CMDLINE_BIN/lib" "$BUILDOZER_SDK/tools/bin/"
+            fi
+          fi
+          
+          # 确保许可证存在
+          mkdir -p "$BUILDOZER_SDK/licenses"
+          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$BUILDOZER_SDK/licenses/android-sdk-license"
+          echo "84831b9409646a918e30573bab4c9c91346d8abd" >> "$BUILDOZER_SDK/licenses/android-sdk-license"
+          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> "$BUILDOZER_SDK/licenses/android-sdk-license"
+          echo "e6b7c2ab7fa2298c15165e9583d0acf0b04a2232" >> "$BUILDOZER_SDK/licenses/google-gdk-license"
+          touch "$BUILDOZER_SDK/licenses/android-sdk-preview-license"
           touch ~/.android/repositories.cfg
-          mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
-          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-          echo "84831b9409646a918e30573bab4c9c91346d8abd" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-          echo "e6b7c2ab7fa2298c15165e9583d0acf0b04a2232" >> ~/.buildozer/android/platform/android-sdk/licenses/google-gdk-license
-          touch ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
-          echo "=== 系统SDK内容 ==="
-          ls -la /usr/local/lib/android/sdk/
+          
+          echo "=== buildozer SDK结构 ==="
+          ls -la "$BUILDOZER_SDK/"
+          echo "=== tools/bin ==="
+          ls -la "$BUILDOZER_SDK/tools/bin/" 2>/dev/null || echo "不存在"
 
       - name: Build debug APK
         run: |
           export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
           export PATH=$JAVA_HOME/bin:$PATH
-          export ANDROID_HOME=/usr/local/lib/android/sdk
-          export ANDROIDSDKROOT=/usr/local/lib/android/sdk
+          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+          export ANDROIDSDKROOT=$HOME/.buildozer/android/platform/android-sdk
           java -version
           echo "ANDROID_HOME=$ANDROID_HOME"
           cd android
           buildozer android debug
         env:
-          ANDROID_HOME: /usr/local/lib/android/sdk
-          ANDROIDSDKROOT: /usr/local/lib/android/sdk
+          ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
+          ANDROIDSDKROOT: /home/runner/.buildozer/android/platform/android-sdk
           JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64
           BUILD_NUMBER: ${{ github.run_number }}
 
